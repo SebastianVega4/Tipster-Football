@@ -1,0 +1,39 @@
+<!-- templates/error.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0">
+                            <i class="fa-solid fa-triangle-exclamation me-2"></i>Error en la Predicción
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-danger" role="alert">
+                            <h4 class="alert-heading">¡Algo salió mal!</h4>
+                            <p>{{ error }}</p>
+                            <hr>
+                            <p class="mb-0">
+                                Por favor verifica los nombres de los equipos y la competición, 
+                                e intenta nuevamente.
+                            </p>
+                        </div>
+                        <a href="/" class="btn btn-primary mt-3">
+                            <i class="fa-solid fa-arrow-left me-1"></i>Volver al inicio
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tipster de Fútbol - Predicciones</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .card { border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .form-control, .btn { border-radius: 10px; }
+        .header-bg { background: linear-gradient(135deg, #1e3c72, #2a5298); }
+        .loading { display: none; }
+    </style>
+</head>
+<body>
+    <div class="header-bg py-5 text-white text-center">
+        <div class="container">
+            <h1 class="display-4 mb-3">⚽ Tipster de Fútbol Profesional</h1>
+            <p class="lead">Predicciones estadísticas basadas en datos históricos</p>
+        </div>
+    </div>
+
+    <div class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Ingresa los datos del partido</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="/predict" method="POST" id="prediction-form">
+                            <div class="mb-3">
+                                <label for="competition" class="form-label">Competición:</label>
+                                <select class="form-select" id="competition" name="competition" required>
+                                    <option value="" disabled selected>Selecciona una competición</option>
+                                    {% for comp in competitions %}
+                                        <option value="{{ comp.id }}">{{ comp.name }} ({{ comp.area.name }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="home_team" class="form-label">Equipo Local:</label>
+                                    <select class="form-select" id="home_team" name="home_team" required disabled>
+                                        <option value="" disabled selected>Primero selecciona una competición</option>
+                                    </select>
+                                    <div class="loading mt-2 text-center" id="loading-home">
+                                        <div class="spinner-border spinner-border-sm" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                        Cargando equipos...
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="away_team" class="form-label">Equipo Visitante:</label>
+                                    <select class="form-select" id="away_team" name="away_team" required disabled>
+                                        <option value="" disabled selected>Primero selecciona una competición</option>
+                                    </select>
+                                    <div class="loading mt-2 text-center" id="loading-away">
+                                        <div class="spinner-border spinner-border-sm" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                        Cargando equipos...
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-success btn-lg" id="submit-btn" disabled>
+                                    Predecir Resultado
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="mt-5">
+                    <h4>Ligas Disponibles:</h4>
+                    <ul class="list-group">
+                        {% for comp in competitions[:10] %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ comp.name }}
+                                <span class="badge bg-primary rounded-pill">{{ comp.area.name }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">Sistema de predicción de fútbol &copy; {{ current_year }} | Usa datos de Football Data API</p>
+            <p class="mt-2 small">Las predicciones son estimaciones estadísticas. Juega responsablemente.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const competitionSelect = document.getElementById('competition');
+            const homeTeamSelect = document.getElementById('home_team');
+            const awayTeamSelect = document.getElementById('away_team');
+            const loadingHome = document.getElementById('loading-home');
+            const loadingAway = document.getElementById('loading-away');
+            const submitBtn = document.getElementById('submit-btn');
+
+            competitionSelect.addEventListener('change', function() {
+                const competitionId = this.value;
+                if (!competitionId) return;
+                
+                // Mostrar indicadores de carga
+                loadingHome.style.display = 'block';
+                loadingAway.style.display = 'block';
+                homeTeamSelect.disabled = true;
+                awayTeamSelect.disabled = true;
+                submitBtn.disabled = true;
+                
+                // Obtener equipos de la API
+                fetch(`/api/teams/${competitionId}`)
+                    .then(response => response.json())
+                    .then(teams => {
+                        // Limpiar selects
+                        homeTeamSelect.innerHTML = '';
+                        awayTeamSelect.innerHTML = '';
+                        
+                        // Añadir opción por defecto
+                        const defaultOption = document.createElement('option');
+                        defaultOption.value = '';
+                        defaultOption.disabled = true;
+                        defaultOption.selected = true;
+                        defaultOption.textContent = 'Selecciona un equipo';
+                        
+                        homeTeamSelect.appendChild(defaultOption.cloneNode(true));
+                        awayTeamSelect.appendChild(defaultOption.cloneNode(true));
+                        
+                        // Llenar con equipos
+                        teams.forEach(team => {
+                            const option = document.createElement('option');
+                            option.value = team.name;
+                            option.textContent = team.name;
+                            homeTeamSelect.appendChild(option);
+                            awayTeamSelect.appendChild(option.cloneNode(true));
+                        });
+                        
+                        // Habilitar selects
+                        homeTeamSelect.disabled = false;
+                        awayTeamSelect.disabled = false;
+                        
+                        // Ocultar indicadores de carga
+                        loadingHome.style.display = 'none';
+                        loadingAway.style.display = 'none';
+                    })
+                    .catch(error => {
+                        console.error('Error cargando equipos:', error);
+                        homeTeamSelect.innerHTML = '<option value="" disabled selected>Error cargando equipos</option>';
+                        awayTeamSelect.innerHTML = '<option value="" disabled selected>Error cargando equipos</option>';
+                        loadingHome.style.display = 'none';
+                        loadingAway.style.display = 'none';
+                    });
+            });
+            
+            // Habilitar el botón de enviar solo cuando ambos equipos estén seleccionados
+            homeTeamSelect.addEventListener('change', checkTeams);
+            awayTeamSelect.addEventListener('change', checkTeams);
+            
+            function checkTeams() {
+                if (homeTeamSelect.value && awayTeamSelect.value && homeTeamSelect.value !== awayTeamSelect.value) {
+                    submitBtn.disabled = false;
+                } else {
+                    submitBtn.disabled = true;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
